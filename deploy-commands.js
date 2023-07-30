@@ -1,3 +1,4 @@
+#!/bin/node
 const { REST, Routes } = require('discord.js');
 const fs = require('fs');
 
@@ -8,7 +9,9 @@ const commandsPath = './interactions/commands';
 const commandFiles = [];
 
 fs.readdirSync(commandsPath).forEach(file => {
-	commandFiles.push(`${commandsPath}/${file}`);
+	if(!file.endsWith('.dev.js')) {
+		commandFiles.push(`${commandsPath}/${file}`);
+	}
 });
 
 console.table(commandFiles);
