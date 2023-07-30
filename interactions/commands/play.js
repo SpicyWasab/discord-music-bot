@@ -92,35 +92,45 @@ module.exports = {
                 selfMute: false
             });
 
-            // playing music
-            connection.subscribe(player);
-
-            player.play(audioResource);
-            metadatas.lastPlayingTimestamp = Date.now();
-
-            player.on(AudioPlayerStatus.Idle, () => {
+            // initializing player events
+            player.on(AudioPlayerStatus.Idle, async () => {
                 const queue = getQueue(guildId);
 
                 // since the first song of the queue ended, we remove it.
                 queue.shift();
-
-                console.log(queue);
                 
                 if(queue.length === 0) {
                     player.stop();
                     removeAudioPlayer(guildId);
                 } else {
                     const nextResource = queue[0];
-                    player.play(nextResource);
+
+                    try {
+                        player.play(nextResource);
+
+                        await entersState(AudioPlayerStatus.Playing, player, 5_000);
+
+                        interaction.channel.send(`Démarrage de la lecture : ${inlineCode(nextResource.metadata.title)} de ${inlineCode(nextResource.metadata.artists.join(', '))}`)
+                    } catch(error) {
+                        console.error('There was an error trying to play the next track :', error);
+                    }
                 }
             });
             
             player.on('error', error => {
                 console.error('Une erreur est survenue avec le player :');
                 console.error(error);
+
+                interaction.channel.send('Une erreur est survenue, passage à la musique suivante !')
+                    .catch(console.error);
             });
 
             try {
+                // playing music
+                connection.subscribe(player);
+
+                player.play(audioResource);
+
                 await entersState(player, AudioPlayerStatus.Playing, 5_000);
     
                 const embed = new EmbedBuilder()
